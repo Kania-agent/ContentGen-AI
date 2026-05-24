@@ -1,249 +1,517 @@
-// ContentGen AI — app.js
+// ContentGen-AI - Smart Content Generation Platform
+// All logic: templates, generators, utilities
 
-let currentFormat = 'blog';
+(function () {
+  "use strict";
 
-const generatedContent = {
-    blog: `Artificial intelligence agents are fundamentally reshaping how software is conceived, built, and maintained. Unlike traditional automation tools, AI agents operate with a degree of autonomy that was previously unimaginable.
+  // ─── DOM refs ───
+  const topicInput = document.getElementById("topic");
+  const typeSelect = document.getElementById("contentType");
+  const industrySelect = document.getElementById("industry");
+  const toneSelect = document.getElementById("tone");
+  const generateBtn = document.getElementById("generateBtn");
+  const copyBtn = document.getElementById("copyBtn");
+  const exportBtn = document.getElementById("exportBtn");
+  const outputEl = document.getElementById("output");
+  const wordCountEl = document.getElementById("wordCount");
+  const readTimeEl = document.getElementById("readTime");
+  const charCountEl = document.getElementById("charCount");
+  const toastEl = document.getElementById("toast");
 
-## The Rise of Autonomous Development
+  // ─── Industry-specific phrase banks ───
+  const industryPhrases = {
+    general: {
+      intros: [
+        "In today's fast-paced world,",
+        "With the ever-evolving landscape of modern life,",
+        "As we navigate the complexities of the 21st century,",
+        "Now more than ever,",
+      ],
+      verbs: ["transform", "revolutionize", "reshape", "elevate", "redefine"],
+      nouns: ["innovation", "progress", "excellence", "growth", "opportunity"],
+      closings: [
+        "The future is bright for those who embrace change.",
+        "Now is the time to take action and make a difference.",
+        "The possibilities are truly endless.",
+      ],
+    },
+    tech: {
+      intros: [
+        "In the rapidly evolving tech landscape,",
+        "As software eats the world,",
+        "With breakthroughs in AI and cloud computing,",
+        "At the intersection of code and creativity,",
+      ],
+      verbs: ["deploy", "scale", "architect", "optimize", "automate"],
+      nouns: ["scalability", "throughput", "latency", "uptime", "throughput"],
+      closings: [
+        "Ship fast, iterate faster.",
+        "The best time to build was yesterday. The second best time is now.",
+        "Code is poetry — write yours deliberately.",
+      ],
+    },
+    health: {
+      intros: [
+        "In the pursuit of better health outcomes,",
+        "As patient-centered care becomes the standard,",
+        "With new research emerging daily,",
+        "The healthcare industry is undergoing a seismic shift,",
+      ],
+      verbs: ["diagnose", "treat", "prevent", "heal", "empower"],
+      nouns: ["wellness", "patient outcomes", "clinical efficacy", "recovery", "vitality"],
+      closings: [
+        "Your health is your greatest investment.",
+        "Prevention is always better than cure.",
+        "Together, we can build a healthier future.",
+      ],
+    },
+    finance: {
+      intros: [
+        "In today's dynamic financial markets,",
+        "As global economies shift and adapt,",
+        "With interest rates and inflation top of mind,",
+        "Smart money management has never been more critical,",
+      ],
+      verbs: ["invest", "diversify", "compound", "leverage", "hedge"],
+      nouns: ["ROI", "portfolio diversification", "capital appreciation", "liquidity", "yield"],
+      closings: [
+        "Start building wealth today — your future self will thank you.",
+        "Financial freedom begins with a single informed decision.",
+        "Don't wait for the perfect moment — make the moment perfect.",
+      ],
+    },
+    ecommerce: {
+      intros: [
+        "In the booming world of online retail,",
+        "As consumer expectations continue to soar,",
+        "With e-commerce growing at record pace,",
+        "Standing out in the digital marketplace requires,",
+      ],
+      verbs: ["convert", "engage", "delight", "ship", "upsell"],
+      nouns: ["conversion rate", "customer lifetime value", "cart abandonment", "brand loyalty", "AOV"],
+      closings: [
+        "Your next customer is one click away.",
+        "Great products deserve great experiences.",
+        "Sell the transformation, not just the product.",
+      ],
+    },
+    education: {
+      intros: [
+        "In the evolving landscape of education,",
+        "As lifelong learning becomes essential,",
+        "With new pedagogical approaches emerging,",
+        "Education is the most powerful weapon for change,",
+      ],
+      verbs: ["teach", "inspire", "empower", "mentor", "cultivate"],
+      nouns: ["knowledge", "critical thinking", "literacy", "curriculum design", "student engagement"],
+      closings: [
+        "Never stop learning — the world never stops teaching.",
+        "Invest in education; the returns are immeasurable.",
+        "Every expert was once a beginner.",
+      ],
+    },
+    fitness: {
+      intros: [
+        "In the pursuit of peak physical performance,",
+        "As the wellness movement gains momentum,",
+        "With science-backed training methods,",
+        "Your body is capable of incredible things,",
+      ],
+      verbs: ["train", "strengthen", "recover", "fuel", "push"],
+      nouns: ["endurance", "flexibility", "muscle hypertrophy", "mindfulness", "nutrition"],
+      closings: [
+        "Consistency beats intensity every time.",
+        "The only bad workout is the one you didn't do.",
+        "Take care of your body — it's the only place you have to live.",
+      ],
+    },
+    food: {
+      intros: [
+        "In the world of culinary excellence,",
+        "As farm-to-table becomes the gold standard,",
+        "With flavors from around the globe,",
+        "Great food brings people together,",
+      ],
+      verbs: ["savor", "craft", "nourish", "flavor", "plate"],
+      nouns: ["umami", "freshness", "craftsmanship", "presentation", "sustainability"],
+      closings: [
+        "Life is too short for bad food.",
+        "Every meal is an opportunity to nourish body and soul.",
+        "Cook with passion, eat with joy.",
+      ],
+    },
+  };
 
-Modern AI agents can understand complex codebases, identify patterns, and generate production-quality code with minimal human intervention. They don't just autocomplete — they reason about architecture, consider edge cases, and suggest improvements.
+  // ─── Tone modifiers ───
+  const toneAdverbs = {
+    professional: ["effectively", "strategically", "efficiently", "systematically"],
+    casual: ["easily", "naturally", "honestly", "simply"],
+    witty: ["brilliantly", "ridiculously", "hilariously", "surprisingly"],
+    persuasive: ["undeniably", "compellingly", "powerfully", "convincingly"],
+    informative: ["notably", "significantly", "remarkably", "importantly"],
+  };
 
-## Key Transformations
+  const toneOpeners = {
+    professional: "Let's examine the key aspects of this topic.",
+    casual: "So, let's talk about this for a sec.",
+    witty: "Buckle up — this is going to be fun.",
+    persuasive: "You need to pay attention to this.",
+    informative: "Here's what you need to know.",
+  };
 
-**1. Intelligent Code Generation**
-AI agents can translate natural language requirements into functional code, complete with tests and documentation. This dramatically reduces the time from concept to implementation.
+  // ─── Helpers ───
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
 
-**2. Automated Code Review**
-Rather than waiting for human reviewers, AI agents can perform real-time code analysis, catching bugs, security vulnerabilities, and performance issues before they reach production.
+  function pickN(arr, n) {
+    const shuffled = [...arr].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(n, arr.length));
+  }
 
-**3. Self-Healing Systems**
-Perhaps most remarkably, AI agents can monitor deployed systems, detect anomalies, and autonomously apply fixes — turning the dream of self-healing software into reality.
+  function capitalize(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
 
-## The Human Element
+  function getPhrases(industry) {
+    return industryPhrases[industry] || industryPhrases.general;
+  }
 
-Despite these advances, the role of human developers remains crucial. AI agents excel at execution and pattern recognition, but human creativity, empathy, and strategic thinking are irreplaceable. The future lies in collaboration, not replacement.
-
-## Looking Ahead
-
-As AI agents become more sophisticated, we'll see a fundamental shift in what it means to be a software developer. The emphasis will move from writing code to guiding AI, from implementing features to defining vision.`,
-    social: `🤖 AI agents aren't just tools — they're becoming teammates.
-
-The future of software development isn't about replacing developers. It's about amplifying them.
-
-Here's what AI agents can already do:
-→ Write production-quality code
-→ Review and fix bugs automatically
-→ Monitor and heal systems in real-time
-→ Test, deploy, and iterate
-
-But here's the thing nobody talks about:
-
-The best results come from human + AI collaboration, not full automation.
-
-The developers who thrive will be those who learn to work WITH AI agents, not against them.
-
-#AI #SoftwareEngineering #DevTools #FutureOfTech`,
-    email: `Subject: How AI Agents Are Transforming Our Development Workflow
-
-Hi [Name],
-
-I wanted to share some exciting developments in how AI agents are changing the software development landscape.
-
-Our team has been testing AI-powered development agents, and the results have been impressive:
-
-• 40% reduction in time from concept to deployment
-• 60% fewer bugs reaching production
-• 3x improvement in code review throughput
-
-The key insight? These agents don't replace developers — they handle the routine work so our engineers can focus on architecture, innovation, and solving complex problems.
-
-I'd love to walk you through a demo. Are you available this week for a quick 15-minute call?
-
-Best regards,
-[Your Name]`,
-    ad: `🚀 Build Software 10x Faster with AI Agents
-
-Stop writing boilerplate. Start building what matters.
-
-Our AI Development Agent handles:
-✅ Code generation from plain English
-✅ Automatic bug detection & fixing
-✅ Real-time code review
-✅ Self-healing production systems
-
-Join 10,000+ developers already shipping faster.
-
-→ Start Free Trial
-
-"Transformed how our team builds software." — TechCrunch`,
-    technical: `# Architecture: Multi-Agent Software Development System
-
-## System Overview
-
-This document describes the architecture of an AI-agent-powered software development pipeline, designed for autonomous code generation, review, and deployment.
-
-## Agent Components
-
-### 1. Code Generation Agent (CGA)
-- **Input**: Natural language specifications, API contracts
-- **Model**: MiMo V2.5 (fine-tuned for code generation)
-- **Output**: Production-ready source code with unit tests
-- **Context Window**: 128K tokens
-
-### 2. Review Agent (RA)
-- **Input**: Pull request diffs, code context
-- **Model**: MiMo V2.5 with specialized security training
-- **Output**: Structured review with severity-scored findings
-- **Integration**: GitHub/GitLab webhooks
-
-### 3. Test Agent (TA)
-- **Input**: Source code, acceptance criteria
-- **Model**: MiMo V2.5 with test generation training
-- **Output**: Test suites (unit, integration, e2e)
-- **Coverage Target**: ≥90% branch coverage
-
-## Pipeline Flow
-
-\`\`\`
-Spec → CGA → RA → TA → CI/CD → Deploy
-          ↑      ↑
-          └──────┘ (feedback loop)
-\`\`\`
-
-## Deployment
-
-The system runs on Kubernetes with auto-scaling:
-- Minimum replicas: 3
-- Maximum replicas: 50
-- GPU allocation: NVIDIA A100 per agent node`
-};
-
-const aiSuggestions = {
-    rephrase: "Here's a rephrased version:\n\nAI agents represent a paradigm shift in software development. Rather than simply automating tasks, they bring a new level of cognitive capability to the development process, enabling autonomous decision-making and adaptive problem-solving.",
-    expand: "Here's an expanded version:\n\nThe emergence of AI agents in software development marks a pivotal moment in the history of computing. These intelligent systems, powered by large language models like MiMo V2.5, can understand context, reason about complex systems, and generate solutions that rival human-quality code. Their impact spans the entire software lifecycle, from initial design through deployment and maintenance.",
-    summarize: "Key takeaways:\n\n• AI agents can autonomously write, review, and test code\n• Human-AI collaboration produces the best outcomes\n• Self-healing systems are becoming a reality\n• The developer role is evolving from code-writing to AI-guiding",
-    improve: "Suggested improvements:\n\n1. Add specific statistics or case studies to support claims\n2. Include a concrete example of an AI agent workflow\n3. Add a comparison table of before/after AI agent adoption\n4. Include a 'getting started' section for readers\n5. Reference specific tools or platforms in the ecosystem"
-};
-
-const templates = {
-    intro: "In the ever-evolving landscape of software development, a new paradigm is emerging that promises to fundamentally change how we build, deploy, and maintain software systems.",
-    cta: "Ready to experience the future of development? Start your free trial today and join thousands of developers who are already building smarter, shipping faster, and creating better software with AI agents.",
-    conclusion: "The age of AI-powered development is here, and it's only getting started. The developers and organizations that embrace these tools today will have a significant advantage tomorrow. The question isn't whether AI agents will transform software development — it's whether you'll be ready when they do.",
-    hook: "What if your code could write itself? Not in theory, not in demos — but in production, at scale, with human-level quality. That's no longer science fiction.",
-    listicle: "Here are the top 5 ways AI agents are transforming software development:\n\n1. **Autonomous Code Generation** — From spec to code in minutes, not months\n2. **Intelligent Bug Detection** — Catching issues before they reach production\n3. **Automated Code Reviews** — Every PR reviewed with expert-level analysis\n4. **Self-Healing Systems** — Production issues fixed before users notice\n5. **Continuous Learning** — Agents that improve with every interaction"
-};
-
-function updateWordCount() {
-    const text = document.getElementById('editor').value;
-    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  function updateStats(text) {
+    const words = text.trim().split(/\s+/).filter(Boolean).length;
     const chars = text.length;
-    const readTime = Math.max(1, Math.ceil(words / 200));
+    const minutes = Math.max(1, Math.ceil(words / 200));
+    wordCountEl.textContent = words + " words";
+    charCountEl.textContent = chars + " chars";
+    readTimeEl.textContent = minutes + " min read";
+  }
 
-    document.getElementById('wordCount').textContent = words;
-    document.getElementById('charCount').textContent = chars;
-    document.getElementById('readTime').textContent = readTime + ' min read';
-}
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    setTimeout(() => toastEl.classList.remove("show"), 2000);
+  }
 
-function updateLineNumbers() {
-    const text = document.getElementById('editor').value;
-    const lines = Math.max(text.split('\n').length, 20);
-    const gutter = document.getElementById('lineNumbers');
-    gutter.innerHTML = Array.from({ length: lines }, (_, i) => i + 1).join('<br>');
-}
+  // ─── Content Generators ───
 
-function generateContent() {
-    const btn = document.getElementById('generateBtn');
-    const editor = document.getElementById('editor');
-    btn.textContent = '⏳ Generating...';
-    btn.disabled = true;
+  function generateBlogPost(topic, industry, tone) {
+    const p = getPhrases(industry);
+    const adv = pick(toneAdverbs[tone]);
+    const sections = [];
 
+    sections.push(`# ${topic}: A Comprehensive Guide\n`);
+    sections.push(`${pick(p.intros)} understanding ${topic} has become essential. ${toneOpeners[tone]}\n`);
+
+    // Section 1
+    sections.push(`## What Is ${topic}?\n`);
+    sections.push(`${capitalize(topic)} ${pick(p.verbs)}s the way we think about ${pick(p.nouns)}. At its core, it represents a fundamental shift in how ${industry === "general" ? "organizations" : industry + " professionals"} approach ${pick(p.nouns)}.\n`);
+    sections.push(`Experts agree that ${topic} is ${adv} reshaping our understanding of ${pick(p.nouns)}. Whether you're a seasoned professional or just getting started, there's never been a better time to dive in.\n`);
+
+    // Section 2
+    sections.push(`## Why ${topic} Matters\n`);
+    const reasons = pickN([
+      `It drives measurable improvements in ${pick(p.nouns)}`,
+      `Organizations that embrace it see up to ${Math.floor(Math.random() * 40 + 20)}% better outcomes`,
+      `It creates a competitive advantage in ${pick(p.nouns)}`,
+      `The ROI of investing in ${topic} is well-documented`,
+      `Early adopters consistently outperform their peers`,
+      `Consumer demand for ${topic}-related solutions is growing`,
+    ], 3);
+    sections.push("Here are the key reasons to pay attention:\n");
+    reasons.forEach((r, i) => sections.push(`${i + 1}. **${r}**`));
+    sections.push("");
+
+    // Section 3
+    sections.push(`## How to Get Started with ${topic}\n`);
+    sections.push(`Implementing ${topic} doesn't have to be overwhelming. ${pick(p.intros).replace(",", "")}, here's a practical roadmap:\n`);
+    const steps = pickN([
+      `**Research:** Start by understanding the fundamentals of ${topic}`,
+      `**Plan:** Define clear goals and success metrics`,
+      `**Execute:** Take small, consistent steps toward implementation`,
+      `**Measure:** Track your progress and iterate based on data`,
+      `**Scale:** Once you've found what works, ${pick(p.verbs)} your approach`,
+      `**Optimize:** Continuously refine based on feedback and results`,
+    ], 4);
+    steps.forEach((s, i) => sections.push(`**Step ${i + 1}:** ${s.replace(/\*\*.*?\*\*: /, "")}\n`));
+
+    // Section 4
+    sections.push(`## Common Mistakes to Avoid\n`);
+    sections.push(`Even experienced professionals stumble when it comes to ${topic}. Watch out for these pitfalls:\n`);
+    const mistakes = pickN([
+      `Trying to do everything at once instead of focusing on incremental progress`,
+      `Ignoring data and relying solely on intuition`,
+      `Failing to align ${topic} initiatives with broader business goals`,
+      `Neglecting to invest in proper training and resources`,
+      `Copying competitors without adapting to your unique context`,
+    ], 3);
+    mistakes.forEach((m) => sections.push(`- ${m}`));
+    sections.push("");
+
+    // Conclusion
+    sections.push(`## Final Thoughts\n`);
+    sections.push(`${pick(p.closings)} ${capitalize(topic)} is not just a trend — it's a fundamental shift that ${pick(p.verbs)}s ${pick(p.nouns)} for the better.\n`);
+    sections.push(`The key takeaway? Start small, stay consistent, and let ${topic} ${adv} ${pick(p.verbs)} your approach to ${pick(p.nouns)}. ${pick(p.closings)}`);
+
+    return sections.join("\n");
+  }
+
+  function generateTweetThread(topic, industry, tone) {
+    const p = getPhrases(industry);
+    const adv = pick(toneAdverbs[tone]);
+    const tweets = [];
+    const count = Math.floor(Math.random() * 3) + 5; // 5-7 tweets
+
+    tweets.push(`🧵 THREAD: Everything you need to know about ${topic}\n\n${pick(p.intros)} this matters more than you think.\n\n👇\n`);
+
+    tweets.push(`1/ ${capitalize(topic)} is ${adv} ${pick(p.verbs)}ing the ${industry} space.\n\nHere's what most people miss about ${pick(p.nouns)}...`);
+    tweets.push(`2/ The biggest myth? That ${topic} is only for experts.\n\nIn reality, anyone can leverage ${pick(p.nouns)} to ${pick(p.verbs)} their results.`);
+    tweets.push(`3/ Key stat: ${Math.floor(Math.random() * 60 + 30)}% of professionals say ${topic} has directly improved their ${pick(p.nouns)}.\n\nThe data doesn't lie.`);
+    tweets.push(`4/ Pro tip: Start with the basics.\n\nFocus on ${pick(p.nouns)} first, then ${pick(p.verbs)} from there. Most people try to skip this step.`);
+    tweets.push(`5/ One thing I've learned about ${topic}:\n\n${capitalize(pick(p.closings))}`);
+    tweets.push(`6/ ${pick(p.intros)} ${topic} will only grow in importance.\n\nThose who invest in understanding it now will ${adv} ${pick(p.verbs)} their ${pick(p.nouns)}.`);
+
+    if (count >= 7) {
+      tweets.push(`7/ TL;DR:\n\n• ${capitalize(topic)} is here to stay\n• Start small, think big\n• Focus on ${pick(p.nouns)}\n• ${pick(p.closings)}\n\n♻️ RT if this was helpful!`);
+    } else {
+      tweets[tweets.length - 1] += `\n\n♻️ RT if this was helpful!`;
+    }
+
+    return tweets.slice(0, count).join("\n\n---\n\n");
+  }
+
+  function generateEmail(topic, industry, tone) {
+    const p = getPhrases(industry);
+    const adv = pick(toneAdverbs[tone]);
+    const lines = [];
+
+    const subjects = [
+      `🚀 ${capitalize(topic)}: What You Need to Know Right Now`,
+      `Don't Miss This: ${capitalize(topic)} Insights Inside`,
+      `Your Guide to ${capitalize(topic)} Is Here`,
+      `[Exclusive] Unlock the Power of ${capitalize(topic)}`,
+    ];
+
+    lines.push(`**Subject:** ${pick(subjects)}\n`);
+    lines.push(`---\n`);
+    lines.push(`Hi [First Name],\n`);
+    lines.push(`${pick(p.intros)} I wanted to share something exciting about ${topic}.\n`);
+    lines.push(`${toneOpeners[tone]}\n`);
+    lines.push(`**Here's the deal:**\n`);
+    lines.push(`${capitalize(topic)} is ${adv} ${pick(p.verbs)}ing how ${industry === "general" ? "businesses" : industry + " organizations"} approach ${pick(p.nouns)}. And the numbers back it up:\n`);
+    lines.push(`- ${Math.floor(Math.random() * 50 + 30)}% improvement in ${pick(p.nouns)}`);
+    lines.push(`- ${Math.floor(Math.random() * 3 + 2)}x faster ${pick(p.verbs)} cycles`);
+    lines.push(`- Measurable impact on ${pick(p.nouns)} within ${Math.floor(Math.random() * 4 + 2)} weeks\n`);
+    lines.push(`**What makes this different?**\n`);
+    lines.push(`Unlike other approaches to ${topic}, our method focuses on ${pick(p.nouns)} first, ensuring you ${adv} ${pick(p.verbs)} your results from day one.\n`);
+    lines.push(`**[CTA Button: Learn More About ${capitalize(topic)}]**\n`);
+    lines.push(`Don't just take my word for it — ${pick(p.closings).toLowerCase()}\n`);
+    lines.push(`To your success,`);
+    lines.push(`[Your Name]`);
+    lines.push(`[Company / Brand]\n`);
+    lines.push(`P.S. — ${pick(["Limited spots available!", "This offer expires soon.", "Reply to this email with questions — I read every one.", "Forward this to someone who needs it."])}`);
+
+    return lines.join("\n");
+  }
+
+  function generateProductDescription(topic, industry, tone) {
+    const p = getPhrases(industry);
+    const adv = pick(toneAdverbs[tone]);
+    const lines = [];
+    const price = (Math.random() * 150 + 19.99).toFixed(2);
+
+    lines.push(`# ${capitalize(topic)} — ${pick(["Premium", "Ultimate", "Essential", "Pro", "Elite"])} Edition\n`);
+    lines.push(`${pick(p.intros)} introducing the ${capitalize(topic)}: a game-changer in ${industry === "general" ? "its category" : industry}.\n`);
+    lines.push(`---\n`);
+    lines.push(`## ✨ Key Features\n`);
+    const features = pickN([
+      `${pick(["Advanced", "Smart", "Intuitive", "Powerful"])} ${pick(p.nouns)} engine`,
+      `Designed to ${adv} ${pick(p.verbs)} your workflow`,
+      `Built with ${pick(["premium", "sustainable", "high-quality", "cutting-edge"])} materials`,
+      `Optimized for ${pick(p.nouns)} and ${pick(p.nouns)}`,
+      `${pick(["Seamless", "Instant", "Effortless"])} integration with your existing tools`,
+      `${Math.floor(Math.random() * 50 + 10)}+ five-star reviews from real customers`,
+    ], 5);
+    features.forEach((f) => lines.push(`- ✅ ${f}`));
+
+    lines.push(`\n## 📦 What's Included\n`);
+    lines.push(`- 1x ${capitalize(topic)} unit`);
+    lines.push(`- Quick-start guide`);
+    lines.push(`- Lifetime access to updates`);
+    lines.push(`- ${pick(["Bonus template pack", "Premium support", "Free accessory kit", "Exclusive community access"])}\n`);
+
+    lines.push(`## 💬 What Customers Say\n`);
+    lines.push(`> "${pick(["This completely changed how I", "I can't believe how much better my", "Best investment I've made for my"])} ${pick(p.verbs)} my ${pick(p.nouns)}. ${pick(["Highly recommend!", "10/10!", "Worth every penny.", "A must-have."])}" — **${pick(["Alex", "Jordan", "Sam", "Taylor", "Morgan"])} M.**\n`);
+
+    lines.push(`---\n`);
+    lines.push(`**💰 Price: $${price}** ~~$${(parseFloat(price) * 1.5).toFixed(2)}~~\n`);
+    lines.push(`**[🛒 Add to Cart]**\n`);
+    lines.push(`${pick(p.closings)}`);
+
+    return lines.join("\n");
+  }
+
+  function generateReadme(topic, industry, tone) {
+    const p = getPhrases(industry);
+    const lines = [];
+    const repoName = topic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+    lines.push(`# ${capitalize(topic)}\n`);
+    lines.push(`> ${pick(p.intros)} this project ${pick(p.verbs)}s ${pick(p.nouns)} for ${industry === "general" ? "developers" : industry + " professionals"}.\n`);
+    lines.push(`[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)`);
+    lines.push(`[![Version](https://img.shields.io/badge/version-${Math.floor(Math.random() * 3) + 1}.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 10)}-green.svg)]()\n`);
+
+    lines.push(`## 📋 Table of Contents\n`);
+    lines.push(`- [About](#about)`);
+    lines.push(`- [Features](#features)`);
+    lines.push(`- [Installation](#installation)`);
+    lines.push(`- [Usage](#usage)`);
+    lines.push(`- [Contributing](#contributing)`);
+    lines.push(`- [License](#license)\n`);
+
+    lines.push(`## 🚀 About\n`);
+    lines.push(`${capitalize(topic)} is an open-source tool designed to ${pick(p.verbs)} ${pick(p.nouns)}. It provides a robust, scalable foundation for building ${industry === "general" ? "modern applications" : industry + " solutions"}.\n`);
+
+    lines.push(`## ✨ Features\n`);
+    const features = pickN([
+      `⚡ Lightning-fast ${pick(p.nouns)}`,
+      `🔒 Enterprise-grade security`,
+      `📱 Responsive and accessible design`,
+      `🔌 Easy integration with existing tools`,
+      `📊 Built-in analytics and reporting`,
+      `🌍 Multi-language support`,
+      `🎨 Customizable themes and layouts`,
+    ], 5);
+    features.forEach((f) => lines.push(`- ${f}`));
+
+    lines.push(`\n## 🛠️ Installation\n`);
+    lines.push("```bash");
+    lines.push(`# Clone the repository`);
+    lines.push(`git clone https://github.com/username/${repoName}.git`);
+    lines.push(`cd ${repoName}`);
+    lines.push("");
+    lines.push(`# Install dependencies`);
+    lines.push(`npm install`);
+    lines.push("");
+    lines.push(`# Start the development server`);
+    lines.push(`npm run dev`);
+    lines.push("```\n");
+
+    lines.push(`## 📖 Usage\n`);
+    lines.push("```javascript");
+    lines.push(`import { ${repoName.replace(/-/g, "")} } from '${repoName}';\n`);
+    lines.push(`// Initialize`);
+    lines.push(`const app = new ${capitalize(topic).replace(/\s+/g, "")}({`);
+    lines.push(`  mode: 'production',`);
+    lines.push(`  debug: false`);
+    lines.push(`});\n`);
+    lines.push(`// Generate results`);
+    lines.push(`const result = app.${pick(p.verbs)}({ input: 'your-data' });`);
+    lines.push(`console.log(result);`);
+    lines.push("```\n");
+
+    lines.push(`## 🤝 Contributing\n`);
+    lines.push(`Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a PR.\n`);
+    lines.push(`1. Fork the repository`);
+    lines.push(`2. Create your feature branch (\`git checkout -b feature/amazing-feature\`)`);
+    lines.push(`3. Commit your changes (\`git commit -m 'Add amazing feature'\`)`);
+    lines.push(`4. Push to the branch (\`git push origin feature/amazing-feature\`)`);
+    lines.push(`5. Open a Pull Request\n`);
+
+    lines.push(`## 📄 License\n`);
+    lines.push(`This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.\n`);
+    lines.push(`---\n`);
+    lines.push(`*${pick(p.closings)}*`);
+
+    return lines.join("\n");
+  }
+
+  // ─── Master generator ───
+  const generators = {
+    blog: generateBlogPost,
+    tweet: generateTweetThread,
+    email: generateEmail,
+    product: generateProductDescription,
+    readme: generateReadme,
+  };
+
+  function generate() {
+    const topic = topicInput.value.trim();
+    if (!topic) {
+      topicInput.focus();
+      showToast("⚠️ Please enter a topic!");
+      return;
+    }
+
+    const type = typeSelect.value;
+    const industry = industrySelect.value;
+    const tone = toneSelect.value;
+
+    generateBtn.disabled = true;
+    generateBtn.textContent = "⏳ Generating...";
+
+    // Simulate brief generation delay for UX
     setTimeout(() => {
-        editor.value = generatedContent[currentFormat] || generatedContent.blog;
-        updateWordCount();
-        updateLineNumbers();
-        btn.textContent = '✨ Generate';
-        btn.disabled = false;
-    }, 1500);
-}
+      const content = generators[type](topic, industry, tone);
+      outputEl.textContent = content;
+      updateStats(content);
 
-function showSuggestion(type) {
-    const output = document.getElementById('aiOutput');
-    const text = generatedContent[currentFormat] || '';
-    if (!text.trim()) {
-        output.innerHTML = '<div class="ai-placeholder">Generate content first to get suggestions.</div>';
-        return;
+      generateBtn.disabled = false;
+      generateBtn.textContent = "🚀 Generate Content";
+      showToast("✅ Content generated!");
+    }, 400);
+  }
+
+  // ─── Copy to clipboard ───
+  function copyToClipboard() {
+    const text = outputEl.textContent;
+    if (!text || text.includes("Your generated content will appear here")) {
+      showToast("⚠️ Nothing to copy!");
+      return;
     }
-    output.innerHTML = aiSuggestions[type] || 'Processing...';
-}
+    navigator.clipboard.writeText(text).then(() => {
+      showToast("📋 Copied to clipboard!");
+    }).catch(() => {
+      // Fallback
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      showToast("📋 Copied to clipboard!");
+    });
+  }
 
-function insertTemplate(type) {
-    const editor = document.getElementById('editor');
-    const template = templates[type];
-    if (template) {
-        editor.value = editor.value ? editor.value + '\n\n' + template : template;
-        updateWordCount();
-        updateLineNumbers();
+  // ─── Export as .md file ───
+  function exportMarkdown() {
+    const text = outputEl.textContent;
+    if (!text || text.includes("Your generated content will appear here")) {
+      showToast("⚠️ Nothing to export!");
+      return;
     }
-}
+    const topic = topicInput.value.trim().replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "content";
+    const type = typeSelect.value;
+    const filename = `${topic}-${type}.md`;
 
-document.addEventListener('DOMContentLoaded', () => {
-    const editor = document.getElementById('editor');
+    const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`💾 Exported as ${filename}`);
+  }
 
-    editor.addEventListener('input', () => {
-        updateWordCount();
-        updateLineNumbers();
-    });
+  // ─── Event listeners ───
+  generateBtn.addEventListener("click", generate);
+  copyBtn.addEventListener("click", copyToClipboard);
+  exportBtn.addEventListener("click", exportMarkdown);
 
-    // Format tabs
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            currentFormat = tab.dataset.format;
-        });
-    });
-
-    // Generate
-    document.getElementById('generateBtn').addEventListener('click', generateContent);
-
-    // Suggestion buttons
-    document.getElementById('rephraseBtn').addEventListener('click', () => showSuggestion('rephrase'));
-    document.getElementById('expandBtn').addEventListener('click', () => showSuggestion('expand'));
-    document.getElementById('summarizeBtn').addEventListener('click', () => showSuggestion('summarize'));
-    document.getElementById('improveBtn').addEventListener('click', () => showSuggestion('improve'));
-
-    // Templates
-    document.querySelectorAll('.template-btn').forEach(btn => {
-        btn.addEventListener('click', () => insertTemplate(btn.dataset.template));
-    });
-
-    // Copy
-    document.getElementById('copyBtn').addEventListener('click', () => {
-        navigator.clipboard.writeText(editor.value).then(() => {
-            const btn = document.getElementById('copyBtn');
-            btn.textContent = '✓ Copied!';
-            setTimeout(() => { btn.textContent = '📋 Copy'; }, 1500);
-        });
-    });
-
-    // Clear
-    document.getElementById('clearBtn').addEventListener('click', () => {
-        editor.value = '';
-        updateWordCount();
-        updateLineNumbers();
-    });
-
-    // Export
-    document.getElementById('exportBtn').addEventListener('click', () => {
-        const blob = new Blob([editor.value], { type: 'text/markdown' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `contentgen-${currentFormat}-${Date.now()}.md`;
-        a.click();
-        URL.revokeObjectURL(url);
-    });
-
-    updateLineNumbers();
-});
+  // Generate on Enter in topic field
+  topicInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") generate();
+  });
+})();
